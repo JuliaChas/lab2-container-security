@@ -21,26 +21,28 @@ som behövs, och har en healthcheck som kollar att appen faktiskt fungerar.
 ## Trivy-scan – Före och Efter
 
 ### Före härdning
-Trivy hittade 12 sårbarheter i den sårbara imagen, varav 5 var HIGH.
+Trivy hittade totalt 1497 sårbarheter i den sårbara imagen (HIGH: 1316, CRITICAL: 181). I Python-paketen specifikt hittades 12 sårbarheter, varav 5 var HIGH.
 
 ### Efter härdning
-Efter härdningen hade antalet sårbarheter minskat kraftigt och inga HIGH
-hittades i Python-paketen. Imagen krympte också från 1.46GB till bara 206MB.
+Efter härdningen minskade antalet sårbarheter drastiskt — från 1497 till 4 (HIGH: 2, CRITICAL: 2),
+och inga HIGH hittades i Python-paketen. Imagen krympte också från 1.46GB till bara 206MB.
 
 ![Trivy Before](screenshots/trivy-before.png)
 ![Trivy After](screenshots/trivy-after.png)
 
 ## SBOM
 Jag genererade en SBOM (Software Bill of Materials) med Trivy i CycloneDX-format.
-Den finns sparad i sbom.json och fungerar som en ingredienslista över allt som
-finns i den härdade imagen. Det gör det enkelt att kolla om en specifik
-komponent påverkas om en ny sårbarhet dyker upp.
+Den finns sparad i sbom.json och fungerar som en fullständig lista över alla
+komponenter och beroenden som finns i den härdade imagen. Det gör det enkelt
+att snabbt kontrollera om en specifik komponent påverkas om en ny sårbarhet
+dyker upp.
 
 ## OPA Gatekeeper
-Jag testade OPA Gatekeeper-policies i namespacet m4k-gang. Policies kontrollerar
-saker som att pods har rätt labels, inte kör som root, och inte använder
-:latest-taggen. När jag testade att skapa en pod utan labels fick jag varningar
-från Gatekeeper direkt.
+Jag använde OPA Gatekeeper i namespacet m4k-gang för att sätta upp automatiska
+säkerhetspolicies i Kubernetes. Policies kontrollerar saker som att pods har
+rätt labels, inte kör som root, och inte använder :latest-taggen. När jag
+testade att skapa en pod utan labels blockerades den direkt av Gatekeeper,
+vilket visar att reglerna faktiskt fungerar i praktiken.
 
 ![Gatekeeper Block](screenshots/gatekeeper-block.png)
 
@@ -55,8 +57,8 @@ Jag lärde mig också att det är viktigt att inte köra containers som root. De
 känns som en liten detalj men om någon tar sig in i containern har de direkt
 full behörighet om den kör som root.
 
-SBOM är något jag inte visste vad det var innan, men det är ganska logiskt —
-det är en lista på allt som finns i din image. Om det dyker upp en ny sårbarhet
+SBOM är något jag inte visste så mycket om innan, men det är ganska logiskt.
+Det är en lista på allt som finns i en image. Om det dyker upp en ny sårbarhet
 i ett bibliotek kan man snabbt kolla om man använder det istället för att gissa.
 
 Gatekeeper kändes lite krångligt i början men jag förstår poängen. Istället för
