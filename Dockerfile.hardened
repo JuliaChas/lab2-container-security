@@ -1,0 +1,28 @@
+# Använder en minimal och uppdaterad basimage för att minska antalet sårbarheter
+FROM python:3.12-slim-bookworm
+
+# Skapar en egen grupp och användare så att appen inte körs som root
+RUN groupadd -r appgroup && useradd -r -g appgroup appuser
+
+# Sätter arbetskatalogen inuti containern
+WORKDIR /app
+
+# Kopierar och installerar beroenden utan att cacha, för att hålla imagen liten
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Kopierar applikationskoden med rätt ägare
+COPY --chown=appuser:appgroup app.py .
+
+# Byter till den icke-root användaren
+USER appuser
+
+# Exponerar port 5000
+EXPOSE 5000
+
+# Healthcheck som verifierar att appen svarar
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5000/')" || exit 1
+
+# Startar applikationen
+CMD ["python", "app.py"]
