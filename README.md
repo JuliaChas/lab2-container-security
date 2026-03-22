@@ -65,3 +65,36 @@ Gatekeeper kändes lite krångligt i början men jag förstår poängen. Iställ
 att hoppas att alla i teamet följer reglerna sätter man upp automatiska
 kontroller som varnar eller blockerar om något inte stämmer. Det är ett smartare
 sätt att jobba när man är flera personer som deployar saker till samma kluster.
+
+
+## Säkerhetsstrategi (VG-del)
+
+### Egna OPA Policies
+
+Jag skapade tre egna policies i klustret för att automatiskt kontrollera att
+pods följer vissa regler. Jag valde dessa tre för att de kändes relevanta
+efter det vi jobbat med i labben och för att de täcker lite olika delar av
+säkerheten.
+
+**julia-require-team-label** kräver att alla pods har en `team`-label. I ett
+delat kluster där flera jobbar samtidigt är det bra att kunna se vem som äger
+vad, annars blir det lätt rörigt.
+
+**julia-no-latest** blockerar användning av `:latest`-taggen. Jag förstod
+under labben att det kan verka praktiskt men egentligen inte är det, man vet
+inte riktigt vilken version som faktiskt körs. Specifika versioner är tryggare.
+
+**julia-require-limits** kräver att containers sätter gränser för CPU och
+minne. Utan det finns risken att en container tar upp för mycket resurser och
+påverkar allt annat i klustret.
+
+### Cosign-signerad image
+
+Jag signerade min härdade image med Cosign. Det gör det möjligt att verifiera
+att imagen är den jag byggde och att ingen ändrat i den efteråt. Den publika
+nyckeln ligger i repot (cosign.pub) och används för att verifiera:
+```bash
+cosign verify --key cosign.pub juliapersson/my-app:hardened
+```
+
+![Cosign Verify](screenshots/cosign-verify.png)
